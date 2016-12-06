@@ -1,6 +1,6 @@
 #ifndef SLEEPING_LIST_H
 #define SLEEPING_LIST_H
-#include <activable_list.h>
+#include <process_list.h>
 
 typedef struct {
 	process_data* head;

@@ -4,41 +4,59 @@
 #include <malloc.c.h>
 #include <stddef.h>
 #include <interrupt.h>
-#include <activable_list.h>
+#include <process_list.h>
 #include <sleeping_list.h>
 #include <process.h>
 
 #define MAX_PROCESS 9
 #define STACK_SIZE 512
 
-activable_list* ACTIVABLE_LIST = NULL;
+process_list* ACTIVABLE_LIST = NULL;
+process_list* DYING_LIST = NULL;
 sleeping_list* SLEEPING_LIST = NULL;
+
 uint32_t PROCESS_COUNT = 0;
+
+void free_process(process_data* process){
+	free(process->stack);
+	free(process->name);
+	free(process);
+}
 
 void scheduler(void){
 	while(is_ready(SLEEPING_LIST))
 		push(ACTIVABLE_LIST,remv(SLEEPING_LIST));
+	while(!is_empty(DYING_LIST))
+		free_process(pop(DYING_LIST));
 
 	push(ACTIVABLE_LIST,ACTIVE_PROCESS);
-	process_data* next_activable = pop(ACTIVABLE_LIST);
+	process_data* next_process = pop(ACTIVABLE_LIST);
 
-	process_data* old_activable = ACTIVE_PROCESS;
-	ACTIVE_PROCESS = next_activable;
-	ctx_sw(old_activable->registers,next_activable->registers);
+	process_data* old_process = ACTIVE_PROCESS;
+	ACTIVE_PROCESS = next_process;
+	ctx_sw(old_process->registers,next_process->registers);
 }
 
 void sleep(uint32_t sleep_count){
 	ACTIVE_PROCESS->sleep_count = get_time() + sleep_count;
 	add(SLEEPING_LIST,ACTIVE_PROCESS);
-	process_data* next_activable = pop(ACTIVABLE_LIST);
+	process_data* next_process = pop(ACTIVABLE_LIST);
 
-	process_data* old_activable = ACTIVE_PROCESS;
-	ACTIVE_PROCESS = next_activable;
-	ctx_sw(old_activable->registers,next_activable->registers);
+	process_data* old_process = ACTIVE_PROCESS;
+	ACTIVE_PROCESS = next_process;
+	ctx_sw(old_process->registers,next_process->registers);
 }
 
-activable_list* create_stack(void){
-	activable_list* list = malloc(sizeof(activable_list));
+void kill(){
+	push(DYING_LIST,ACTIVE_PROCESS);
+	process_data* next_process = pop(ACTIVABLE_LIST);
+	process_data* old_process = ACTIVE_PROCESS;
+	ACTIVE_PROCESS = next_process;
+	ctx_sw(old_process->registers,next_process->registers);
+}
+
+process_list* create_stack(void){
+	process_list* list = malloc(sizeof(process_list));
 	list->head = NULL;
 	list->tail = NULL;
 	list->size = 0;
@@ -62,10 +80,9 @@ void print_process(void){
 }
 
 void print_process2(void){
-	for(;;){
-		printf("[%s] pid = %i\n",ACTIVE_PROCESS->name,ACTIVE_PROCESS->pid);
-		sleep(2);
-	}
+	printf("[%s] pid = %i\n",ACTIVE_PROCESS->name,ACTIVE_PROCESS->pid);
+	sleep(2);
+	kill();
 }
 
 void print_process3(void){
