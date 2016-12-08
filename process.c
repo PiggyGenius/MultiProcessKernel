@@ -80,13 +80,14 @@ void print_process(void){
 }
 
 void print_process2(void){
-	printf("[%s] pid = %i\n",ACTIVE_PROCESS->name,ACTIVE_PROCESS->pid);
-	sleep(2);
-	kill();
+	for(uint32_t i = 0;i < 11;i++){
+		printf("[%s] pid = %i\n",ACTIVE_PROCESS->name,ACTIVE_PROCESS->pid);
+		sleep(2);
+	}
 }
 
 void print_process3(void){
-	for(;;){
+	for(uint32_t i = 0;i < 4;i++){
 		printf("[%s] pid = %i\n",ACTIVE_PROCESS->name,ACTIVE_PROCESS->pid);
 		sleep(3);
 	}
@@ -101,7 +102,7 @@ void print_process5(void){
 
 void idle(void){
 	for(;;){
-		printf("[%s] pid = %i\n",ACTIVE_PROCESS->name,ACTIVE_PROCESS->pid);
+		/*printf("[%s] pid = %i\n",ACTIVE_PROCESS->name,ACTIVE_PROCESS->pid);*/
 		sti();
 		hlt();
 		cli();
@@ -131,8 +132,9 @@ uint32_t create_process(void (*fct)(void),char* name){
 	strcpy(proc->name,name);
 
 	proc->pid = PROCESS_COUNT;
-	proc->registers[1] = (int32_t) &(proc->stack[STACK_SIZE-1]);
-	proc->stack[STACK_SIZE-1] = (int32_t) fct;
+	proc->registers[1] = (int32_t) &(proc->stack[STACK_SIZE-2]);
+	proc->stack[STACK_SIZE-1] = (int32_t) kill;
+	proc->stack[STACK_SIZE-2] = (int32_t) fct;
 	proc->next = NULL;
 	push(ACTIVABLE_LIST,proc);
 	return PROCESS_COUNT++;

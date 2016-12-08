@@ -6,10 +6,9 @@
 #include <process_list.h>
 
 void push(process_list* list,process_data* process){
-	if(list == NULL || process == NULL){
-		printf("The arguments can't be NULL.\n");
+	if(list == NULL || process == NULL)
 		return;
-	}
+
 	process->state = ACTIVABLE;
 	process->next = NULL;
 	if(list->head == NULL){
